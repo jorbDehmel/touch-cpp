@@ -5,13 +5,30 @@
 #include <regex>
 #include <algorithm>
 #include <fstream>
-#include <stdio.h>
 #include <sstream>
+
+#include <stdio.h>
 
 #include "tags.hpp"
 #include "getOS.hpp"
 
 using namespace std;
+
+/////////////////////////////////////////
+
+struct Info
+{
+    string name;
+    string email;
+    string website;
+    long year;
+    string yearSuffix;
+    string license;
+    string other;
+    bool doDefault;
+};
+
+/////////////////////////////////////////
 
 string formatFilename(string toFormat)
 {
@@ -22,38 +39,92 @@ string formatFilename(string toFormat)
     return out;
 }
 
-bool loadData(const string dataFilePath, string &name, string &email, string &website, int &year, string &yearSuffix,
-              string &license, string &other, bool &doDefault)
+// returns true on success
+bool loadData(const string dataFilePath, Info &info)
 {
+    ifstream file(dataFilePath);
+    if (!file.is_open())
+    {
+        cout << "During loading of " << dataFilePath << ":\n";
+        cout << tags::red_bold
+             << "Error: Failed to load data file. Defaults will be used.\n"
+             << tags::reset;
+
+        return false;
+    }
+
+    getline(file, info.name);
+    getline(file, info.email);
+    getline(file, info.website);
+
+    string yearTemp;
+    getline(file, yearTemp);
+    info.year = stoi(yearTemp);
+
+    getline(file, info.yearSuffix);
+    getline(file, info.license);
+    getline(file, info.other);
+
+    string defaultTemp;
+    getline(file, defaultTemp);
+    info.doDefault = (defaultTemp == "true");
+
+    file.close();
+
+    return true;
 }
+
+// returns true on success
+void saveData(const string dataFilePath, const Info &info)
+{
+    ofstream file(dataFilePath, ios::out);
+    if (!file.is_open())
+    {
+        cout << "During loading of " << dataFilePath << ":\n";
+        cout << tags::red_bold
+             << "Error: Failed to load data file for output.\n"
+             << tags::reset;
+
+        return;
+    }
+
+    file << info.name << '\n'
+         << info.email << '\n'
+         << info.website << '\n'
+         << to_string(info.year) << '\n'
+         << info.yearSuffix << '\n'
+         << info.license << '\n'
+         << info.other << '\n'
+         << (info.doDefault
+                 ? "true"
+                 : "false");
+
+    file.close();
+
+    return;
+}
+
+/////////////////////////////////////////
 
 int main(const int argc, const char *argv[])
 {
     string dataFilePath;
     if (OS == Linux)
     {
-        dataFilePath = "~/.touch-cpp_data.txt";
+        dataFilePath = "/home/$USER/touch-cpp_data.txt";
     }
     else
     {
-        dataFilePath = "$HOME/.touch-cpp_data.txt";
+        dataFilePath = "$HOME/touch-cpp_data.txt";
     }
 
     // Prepare
-    string name = "Joe Smith";
-    string email = "example@example.com";
-    string website = "github.com/example";
-
-    int year = 1970 + (time(NULL) / (365.25 * 24 * 60 * 60));
-    string yearSuffix = " - present";
-    string license = "MIT licence via mit-license.org held by author";
-    string other = "";
-
-    bool doDefault = true;
+    Info info{"James Smith", "example@example.com", "github.com/example", 1970 + (time(NULL) / 31557600),
+              " - present", "MIT licence via mit-license.org held by author", "", true};
 
     string filename = "";
 
-    loadData(dataFilePath, name, email, website, year, yearSuffix, license, other, doDefault);
+    loadData(dataFilePath, info);
 
     /////////////////////////////////////////
 
@@ -79,36 +150,36 @@ int main(const int argc, const char *argv[])
             // Flags
             case 'a':
                 // author
-                name = argv[i];
+                info.name = argv[i];
 
                 break;
             case 'e':
                 // email
-                email = argv[i];
+                info.email = argv[i];
                 break;
             case 'w':
                 // website
-                website = argv[i];
+                info.website = argv[i];
                 break;
             case 'y':
                 // year
-                year = stoi(argv[i]);
+                info.year = stoi(argv[i]);
                 break;
             case 's':
                 // year suffix
-                yearSuffix = argv[i];
+                info.yearSuffix = argv[i];
                 break;
             case 'l':
                 // license
-                license = argv[i];
+                info.license = argv[i];
                 break;
             case 'o':
                 // other
-                other = argv[i];
+                info.other = argv[i];
                 break;
             case 'd':
                 // doDefault
-                doDefault = (argv[i][0] == 't');
+                info.doDefault = (argv[i][0] == 't');
                 break;
 
             // Terminal cases
@@ -117,7 +188,7 @@ int main(const int argc, const char *argv[])
                 cout << tags::yellow_bold
                      << "    | Meaning     | Usage\n"
                      << "-------------------------------------------------\n"
-                     << " -a | Author      | -a \"Joe Smith\"\n"
+                     << " -a | Author      | -a \"James Smith\"\n"
                      << " -d | Do default  | -d true\n"
                      << " -e | Email       | -e jsmith@foobar.com\n"
                      << " -h | Help        | -h\n"
@@ -144,6 +215,8 @@ int main(const int argc, const char *argv[])
         }
     }
 
+    saveData(dataFilePath, info);
+
     /////////////////////////////////////////
 
     if (filename.size() == 0)
@@ -166,19 +239,19 @@ int main(const int argc, const char *argv[])
     stringstream file;
 
     file << "/*\n"
-         << name << '\n'
-         << email << '\n'
-         << website << '\n'
-         << year << yearSuffix << '\n'
-         << license << "\n";
-    if (other != "")
+         << info.name << '\n'
+         << info.email << '\n'
+         << info.website << '\n'
+         << info.year << info.yearSuffix << '\n'
+         << info.license << "\n";
+    if (info.other != "")
     {
-        file << other << '\n';
+        file << info.other << '\n';
     }
     file << "*/\n\n";
 
     // Suffix-based specialization
-    if (doDefault)
+    if (info.doDefault)
     {
         if (filename.size() > 4 && filename.substr(filename.size() - 4) == ".cpp")
         {
