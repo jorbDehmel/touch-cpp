@@ -1,13 +1,9 @@
 // Jordan Dehmel, 2023
 
-#include <cassert>
 #include <iostream>
-#include <regex>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-
-#include <stdio.h>
 
 #include "tags.hpp"
 #include "getOS.hpp"
@@ -34,7 +30,7 @@ string formatFilename(string toFormat)
 {
     string out = toFormat;
     transform(out.begin(), out.end(), out.begin(), ::toupper);
-    out = regex_replace(out, regex("\\."), "_");
+    replace(out.begin(), out.end(), '.', '_');
 
     return out;
 }
@@ -111,7 +107,9 @@ int main(const int argc, const char *argv[])
     string dataFilePath;
     if (OS == Linux)
     {
-        dataFilePath = "/home/$USER/touch-cpp_data.txt";
+        // i cannot for the life of me get this to work generally,
+        // so just put your own path here
+        dataFilePath = "/home/jorb/touch-cpp_data.txt";
     }
     else
     {
