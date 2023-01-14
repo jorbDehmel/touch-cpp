@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <cassert>
 
 #include "tags.hpp"
 #include "getOS.hpp"
@@ -107,9 +108,14 @@ int main(const int argc, const char *argv[])
     string dataFilePath;
     if (OS == Linux)
     {
-        // i cannot for the life of me get this to work generally,
-        // so just put your own path here
-        dataFilePath = "/home/jorb/touch-cpp_data.txt";
+        // I cannot for the life of me get this to work without system calls
+        system("echo $HOME > temp.txt");
+        ifstream fin("temp.txt");
+        assert(fin.is_open());
+        fin >> dataFilePath;
+        fin.close();
+
+        dataFilePath += "/touch-cpp_data.txt";
     }
     else
     {
