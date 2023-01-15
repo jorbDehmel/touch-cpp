@@ -114,6 +114,7 @@ int main(const int argc, const char *argv[])
         assert(fin.is_open());
         fin >> dataFilePath;
         fin.close();
+        system("rm -f temp.txt");
 
         dataFilePath += "/touch-cpp_data.txt";
     }
