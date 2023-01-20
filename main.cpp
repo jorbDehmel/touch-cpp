@@ -23,6 +23,7 @@ struct Info
     string license;
     string other;
     bool doDefault;
+    string templateFile;
 };
 
 /////////////////////////////////////////
@@ -66,6 +67,8 @@ bool loadData(const string dataFilePath, Info &info)
     getline(file, defaultTemp);
     info.doDefault = (defaultTemp == "true");
 
+    getline(file, info.templateFile);
+
     file.close();
 
     return true;
@@ -94,7 +97,9 @@ void saveData(const string dataFilePath, const Info &info)
          << info.other << '\n'
          << (info.doDefault
                  ? "true"
-                 : "false");
+                 : "false")
+         << '\n'
+         << info.templateFile;
 
     file.close();
 
@@ -105,6 +110,7 @@ void saveData(const string dataFilePath, const Info &info)
 
 int main(const int argc, const char *argv[])
 {
+    string homeDir;
     string dataFilePath;
     if (OS == Linux)
     {
@@ -112,20 +118,21 @@ int main(const int argc, const char *argv[])
         system("echo $HOME > temp.txt");
         ifstream fin("temp.txt");
         assert(fin.is_open());
-        fin >> dataFilePath;
+        fin >> homeDir;
         fin.close();
         system("rm -f temp.txt");
 
-        dataFilePath += "/touch-cpp_data.txt";
+        dataFilePath = homeDir + "/touch-cpp_data.txt";
     }
     else
     {
+        homeDir = "$HOME/";
         dataFilePath = "$HOME/touch-cpp_data.txt";
     }
 
     // Prepare
     Info info{"James Smith", "example@example.com", "github.com/example", 1970 + (time(NULL) / 31557600),
-              " - present", "MIT licence via mit-license.org held by author", "", true};
+              " - present", "MIT licence via mit-license.org held by author", "", true, ""};
 
     string filename = "";
 
@@ -174,6 +181,10 @@ int main(const int argc, const char *argv[])
                 // year suffix
                 info.yearSuffix = argv[i];
                 break;
+            case 't':
+                // Template filepath
+                info.templateFile = argv[i];
+                break;
             case 'l':
                 // license
                 info.license = argv[i];
@@ -200,8 +211,17 @@ int main(const int argc, const char *argv[])
                      << " -l | Lisence     | -l \"MIT via mit-license.org\"\n"
                      << " -o | Other       | -o \"Have a nice day!\"\n"
                      << " -s | Year suffix | -s \" - present\"\n"
+                     << " -t | .c template | -t defaultToAdd.cpp\n"
                      << " -w | Website     | -w www.jsmith.com/\n"
                      << " -y | Year        | -y 1912\n"
+                     << "-------------------------------------------------\n"
+                     << "    These options all modify the default, rather\n"
+                     << "than being single-use. To use a template, create\n"
+                     << "a *.cpp file in your $HOME or /home/$USER dir.\n"
+                     << "This will have all the code that follows the\n"
+                     << "universal header.\n"
+                     << "-------------------------------------------------\n"
+                     << "(Jordan 'Jorb' Dehmel, 2023, jdehmel@outlook.com)\n"
                      << tags::reset;
 
                 return 0;
@@ -260,13 +280,37 @@ int main(const int argc, const char *argv[])
     {
         if (filename.size() > 4 && filename.substr(filename.size() - 4) == ".cpp")
         {
-            file << "#include <iostream>\n"
-                    "using namespace std;\n\n"
-                    "int main(const int argc, const char *argv[])\n"
-                    "{\n"
-                    "    cout << \"Hello, world!\" << endl;\n"
-                    "    return 0;\n"
-                    "}\n";
+            if (info.templateFile == "")
+            {
+                file << "#include <iostream>\n"
+                        "using namespace std;\n\n"
+                        "int main(const int argc, const char *argv[])\n"
+                        "{\n"
+                        "    cout << \"Hello, world!\" << endl;\n"
+                        "    return 0;\n"
+                        "}\n";
+            }
+            else
+            {
+                // load template here
+                ifstream templateFile(homeDir + '/' + info.templateFile);
+                if (!templateFile.is_open())
+                {
+                    cout << tags::red_bold
+                         << "Could not open specified template file \""
+                         << homeDir << '/' << info.templateFile << "\".\n"
+                         << "Ensure this file exists.\n"
+                         << tags::reset;
+                }
+
+                string line;
+                while (getline(templateFile, line))
+                {
+                    file << line << '\n';
+                }
+
+                templateFile.close();
+            }
         }
         else
         {
