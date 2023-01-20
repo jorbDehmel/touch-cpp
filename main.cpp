@@ -23,7 +23,9 @@ struct Info
     string license;
     string other;
     bool doDefault;
+
     string templateFile;
+    string templateHeader;
 };
 
 /////////////////////////////////////////
@@ -68,6 +70,7 @@ bool loadData(const string dataFilePath, Info &info)
     info.doDefault = (defaultTemp == "true");
 
     getline(file, info.templateFile);
+    getline(file, info.templateHeader);
 
     file.close();
 
@@ -99,7 +102,8 @@ void saveData(const string dataFilePath, const Info &info)
                  ? "true"
                  : "false")
          << '\n'
-         << info.templateFile;
+         << info.templateFile << '\n'
+         << info.templateHeader;
 
     file.close();
 
@@ -132,7 +136,7 @@ int main(const int argc, const char *argv[])
 
     // Prepare
     Info info{"James Smith", "example@example.com", "github.com/example", 1970 + (time(NULL) / 31557600),
-              " - present", "MIT licence via mit-license.org held by author", "", true, ""};
+              " - present", "MIT licence via mit-license.org held by author", "", true, "", ""};
 
     string filename = "";
 
@@ -181,9 +185,13 @@ int main(const int argc, const char *argv[])
                 // year suffix
                 info.yearSuffix = argv[i];
                 break;
-            case 't':
+            case 'c':
                 // Template filepath
                 info.templateFile = argv[i];
+                break;
+            case 't':
+                // Template header filepath
+                info.templateHeader = argv[i];
                 break;
             case 'l':
                 // license
@@ -205,13 +213,14 @@ int main(const int argc, const char *argv[])
                      << "    | Meaning     | Usage\n"
                      << "-------------------------------------------------\n"
                      << " -a | Author      | -a \"James Smith\"\n"
+                     << " -c | .c template | -c defaultToAdd.cpp\n"
                      << " -d | Do default  | -d true\n"
                      << " -e | Email       | -e jsmith@foobar.com\n"
                      << " -h | Help        | -h\n"
                      << " -l | Lisence     | -l \"MIT via mit-license.org\"\n"
                      << " -o | Other       | -o \"Have a nice day!\"\n"
                      << " -s | Year suffix | -s \" - present\"\n"
-                     << " -t | .c template | -t defaultToAdd.cpp\n"
+                     << " -t | .h template | -t defaultToAdd.hpp\n"
                      << " -w | Website     | -w www.jsmith.com/\n"
                      << " -y | Year        | -y 1912\n"
                      << "-------------------------------------------------\n"
@@ -316,13 +325,40 @@ int main(const int argc, const char *argv[])
         {
             string formatted = formatFilename(filename);
             file << "#ifndef " + formatted + "\n"
-                 << "#define " + formatted + "\n\n"
-                 << "class FooBar\n"
-                 << "{\n"
-                 << "public:\n"
-                 << "    void fizzBuzz();\n"
-                 << "};\n\n"
-                 << "#endif\n";
+                 << "#define " + formatted + "\n\n";
+
+            if (info.templateHeader == "")
+            {
+                string formatted = formatFilename(filename);
+                file << "class FooBar\n"
+                     << "{\n"
+                     << "public:\n"
+                     << "    void fizzBuzz();\n"
+                     << "};\n";
+            }
+            else
+            {
+                // load template here
+                ifstream templateFile(homeDir + '/' + info.templateHeader);
+                if (!templateFile.is_open())
+                {
+                    cout << tags::red_bold
+                         << "Could not open specified template file \""
+                         << homeDir << '/' << info.templateHeader << "\".\n"
+                         << "Ensure this file exists.\n"
+                         << tags::reset;
+                }
+
+                string line;
+                while (getline(templateFile, line))
+                {
+                    file << line << '\n';
+                }
+
+                templateFile.close();
+            }
+
+            file << "\n#endif\n";
         }
     }
 
