@@ -321,7 +321,7 @@ int main(const int argc, const char *argv[])
                 templateFile.close();
             }
         }
-        else
+        else if ((filename.size() > 4 && filename.substr(filename.size() - 4) == ".hpp") || (filename.size() > 2 && filename.substr(filename.size() - 2) == ".h"))
         {
             string formatted = formatFilename(filename);
             file << "#ifndef " + formatted + "\n"
