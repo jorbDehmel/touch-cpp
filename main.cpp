@@ -230,6 +230,9 @@ int main(const int argc, const char *argv[])
                      << "This will have all the code that follows the\n"
                      << "universal header.\n"
                      << "-------------------------------------------------\n"
+                     << "Current .cpp template: " << info.templateFile << '\n'
+                     << "Current .h/.hpp template: " << info.templateHeader << '\n'
+                     << "-------------------------------------------------\n"
                      << "(Jordan 'Jorb' Dehmel, 2023, jdehmel@outlook.com)\n"
                      << tags::reset;
 
