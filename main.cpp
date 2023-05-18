@@ -275,17 +275,22 @@ int main(const int argc, const char *argv[])
 
     stringstream file;
 
-    file << "/*\n"
-         << info.name << '\n'
-         << info.email << '\n'
-         << info.website << '\n'
-         << info.year << info.yearSuffix << '\n'
-         << info.license << "\n";
-    if (info.other != "")
+    if ((filename.size() > 2 && filename.substr(filename.size() - 2) == ".h") ||
+        (filename.size() > 4 && (filename.substr(filename.size() - 4) == ".cpp" ||
+                                 filename.substr(filename.size() - 4) == ".hpp")))
     {
-        file << info.other << '\n';
+        file << "/*\n"
+             << info.name << '\n'
+             << info.email << '\n'
+             << info.website << '\n'
+             << info.year << info.yearSuffix << '\n'
+             << info.license << "\n";
+        if (info.other != "")
+        {
+            file << info.other << '\n';
+        }
+        file << "*/\n\n";
     }
-    file << "*/\n\n";
 
     // Suffix-based specialization
     if (info.doDefault)
